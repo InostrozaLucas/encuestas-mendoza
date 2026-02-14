@@ -12,7 +12,7 @@ import { Trash2, Plus, GripVertical, ImageIcon } from 'lucide-react'
 
 import { Question } from '@/types/admin'
 
-type QuestionType = 'single_choice_image' | 'multiple_choice' | 'slider_scale' | 'boolean' | 'text'
+type QuestionType = 'single_choice_image' | 'multiple_choice' | 'single_choice' | 'slider_scale' | 'boolean' | 'text'
 
 // Assuming a Question type structure for initialData
 // interface Question { ... } removed to use imported type

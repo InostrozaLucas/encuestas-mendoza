@@ -7,7 +7,7 @@ import { Thermometer } from "./Thermometer"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 
-export type QuestionType = "single_choice_image" | "thermometer" | "single_choice"
+export type QuestionType = "single_choice_image" | "thermometer" | "single_choice" | "multiple_choice" | "slider_scale" | "boolean" | "text"
 
 export interface Option {
     id: string
