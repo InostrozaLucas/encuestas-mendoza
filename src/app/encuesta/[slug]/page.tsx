@@ -9,7 +9,6 @@ import FingerprintJS from '@fingerprintjs/fingerprintjs'
 import { Loader2 } from "lucide-react"
 
 export default function SurveyPage({ params }: { params: Promise<{ slug: string }> }) {
-    // Unwrap params in Next.js 15+ 
     const unwrappedParams = use(params)
     const slug = unwrappedParams.slug
 
@@ -67,7 +66,7 @@ export default function SurveyPage({ params }: { params: Promise<{ slug: string 
                     const uiQuestion: Question = {
                         id: q.id,
                         type: q.type as QuestionType,
-                        text: content.question || "Pregunta sin texto", // Default text
+                        text: content.question || "Pregunta sin texto",
                         required: q.is_required
                     }
 
@@ -81,11 +80,13 @@ export default function SurveyPage({ params }: { params: Promise<{ slug: string 
                     }
 
                     if (q.type === 'slider_scale') {
+                        // CRITICAL: Map specific fields for Slider
                         uiQuestion.thermometerConfig = {
                             min: 1,
                             max: 10,
                             step: 1
                         }
+                        // Map optional fields from JSON content
                         uiQuestion.imageUrl = content.imageUrl
                         uiQuestion.minLabel = content.minLabel
                         uiQuestion.maxLabel = content.maxLabel
@@ -136,14 +137,13 @@ export default function SurveyPage({ params }: { params: Promise<{ slug: string 
         setError(null)
 
         try {
-            // 1. Insert into survey_responses
             const { data: responseData, error: responseError } = await supabase
                 .from('survey_responses')
                 .insert({
                     survey_id: survey.id,
                     fingerprint_hash: visitorId,
-                    ip_hash: "client-ip", // Placeholder
-                    started_at: new Date().toISOString(), // Should ideally be tracked from start
+                    ip_hash: "client-ip",
+                    started_at: new Date().toISOString(),
                     completed_at: new Date().toISOString(),
                 })
                 .select()
@@ -153,19 +153,11 @@ export default function SurveyPage({ params }: { params: Promise<{ slug: string 
 
             const responseId = responseData.id
 
-            // 2. Insert Answers
             const answerInserts = Object.keys(finalAnswers).map(questionId => {
                 const val = finalAnswers[questionId]
-                // Handle array answers (multiple choice) by joining or storing as JSON? 
-                // DB schema has `answer_value TEXT` and `answer_json JSONB`.
-                // Schema usually has `answer_value TEXT` based on previous creation. 
-                // Let's check schema if we can... actually we know it has answer_value TEXT usually.
-                // For multiple choice, we likely want to store a comma separated string OR use a different field?
-                // Let's assume TEXT stores JSON string if generic, or simple string.
-                // Re-reading schema: `answer_value TEXT`. 
-                // We will JSON.stringify array values.
-
                 let valueToStore = val
+
+                // Handle complex values
                 if (Array.isArray(val) || typeof val === 'object') {
                     valueToStore = JSON.stringify(val)
                 } else {
@@ -174,7 +166,7 @@ export default function SurveyPage({ params }: { params: Promise<{ slug: string 
 
                 return {
                     response_id: responseId,
-                    question_id: questionId, // DB ID
+                    question_id: questionId,
                     answer_value: valueToStore
                 }
             })
@@ -208,7 +200,7 @@ export default function SurveyPage({ params }: { params: Promise<{ slug: string 
             <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
                 <div className="bg-white p-6 rounded-lg shadow max-w-md text-center">
                     <h2 className="text-xl font-bold text-red-600 mb-2">Error</h2>
-                    <p className="text-gray-600">{error || "No hay preguntas disponibles en esta encuesta."}</p>
+                    <p className="text-gray-600">{error || "No hay preguntas disponibles."}</p>
                 </div>
             </div>
         )
@@ -236,7 +228,6 @@ export default function SurveyPage({ params }: { params: Promise<{ slug: string 
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
-            {/* Header / Progress */}
             <div className="h-1.5 bg-gray-200">
                 <div
                     className="h-full bg-[hsl(var(--primary))] transition-all duration-500 ease-out"
@@ -258,4 +249,5 @@ export default function SurveyPage({ params }: { params: Promise<{ slug: string 
         </div>
     )
 }
+
 
