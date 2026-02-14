@@ -1,15 +1,16 @@
 'use client'
 
 import { useActionState } from 'react'
-import { loginAction } from '../actions'
+import { loginAction, type LoginState } from '../actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { LockKeyhole } from 'lucide-react'
 
-const initialState = {
+const initialState: LoginState = {
     error: '',
+    success: false
 }
 
 export default function AdminLogin() {

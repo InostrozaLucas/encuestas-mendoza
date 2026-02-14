@@ -37,8 +37,17 @@ interface QuestionViewProps {
 }
 
 export function QuestionView({ question, onNext, isLastQuestion, isSubmitting = false }: QuestionViewProps) {
-    const [selectedOption, setSelectedOption] = useState<string | null>(null)
+    const [selectedOption, setSelectedOption] = useState<string | string[] | null>(null)
     const [thermometerValue, setThermometerValue] = useState<number[]>([5])
+
+    const handleMultipleChoiceSelect = (id: string) => {
+        const current = Array.isArray(selectedOption) ? selectedOption : []
+        if (current.includes(id)) {
+            setSelectedOption(current.filter(i => i !== id))
+        } else {
+            setSelectedOption([...current, id])
+        }
+    }
 
     const handleNext = () => {
         if (question.type === "thermometer") {
@@ -55,6 +64,7 @@ export function QuestionView({ question, onNext, isLastQuestion, isSubmitting = 
 
     const canProceed = () => {
         if (question.type === "thermometer") return true
+        if (Array.isArray(selectedOption)) return selectedOption.length > 0
         return !!selectedOption
     }
 
@@ -85,6 +95,58 @@ export function QuestionView({ question, onNext, isLastQuestion, isSubmitting = 
                                     onClick={() => setSelectedOption(option.id)}
                                 />
                             ))}
+                        </div>
+                    )}
+
+                    {question.type === "single_choice" && question.options && (
+                        <div className="flex flex-col gap-3">
+                            {question.options.map((option) => (
+                                <div
+                                    key={option.id}
+                                    className={`flex items-center p-4 rounded-xl border transition-all cursor-pointer ${selectedOption === option.id
+                                        ? "border-slate-900 bg-slate-50 dark:border-slate-100 dark:bg-slate-800"
+                                        : "border-gray-200 hover:border-gray-300 bg-white"
+                                        }`}
+                                    onClick={() => setSelectedOption(option.id)}
+                                >
+                                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center mr-3 ${selectedOption === option.id
+                                        ? "border-slate-900 bg-slate-900 dark:border-slate-100 dark:bg-slate-100"
+                                        : "border-gray-300"
+                                        }`}>
+                                        {selectedOption === option.id && <div className="w-2 h-2 rounded-full bg-white dark:bg-slate-900" />}
+                                    </div>
+                                    <span className="text-lg font-medium">{option.label}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {question.type === "multiple_choice" && question.options && (
+                        <div className="flex flex-col gap-3">
+                            {question.options.map((option) => {
+                                const isSelected = Array.isArray(selectedOption) ? selectedOption.includes(option.id) : selectedOption === option.id; // Handle mixed state temporarily
+                                // Actually, we need to handle state for array.
+                                // The current state `selectedOption` is `string | null`. 
+                                // We need to refactor state to support array for multiple choice.
+                                return (
+                                    <div
+                                        key={option.id}
+                                        className={`flex items-center p-4 rounded-xl border transition-all cursor-pointer ${isSelected
+                                            ? "border-slate-900 bg-slate-50 dark:border-slate-100 dark:bg-slate-800"
+                                            : "border-gray-200 hover:border-gray-300 bg-white"
+                                            }`}
+                                        onClick={() => handleMultipleChoiceSelect(option.id)}
+                                    >
+                                        <div className={`w-5 h-5 rounded-sm border flex items-center justify-center mr-3 ${isSelected
+                                            ? "border-slate-900 bg-slate-900 dark:border-slate-100 dark:bg-slate-100"
+                                            : "border-gray-300"
+                                            }`}>
+                                            {isSelected && <div className="w-3 h-3 text-white dark:text-slate-900 font-bold flex items-center justify-center text-[10px]">✓</div>}
+                                        </div>
+                                        <span className="text-lg font-medium">{option.label}</span>
+                                    </div>
+                                )
+                            })}
                         </div>
                     )}
 

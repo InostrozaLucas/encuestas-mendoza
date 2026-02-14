@@ -3,8 +3,12 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-// Fixed signature for useActionState: (state: any, formData: FormData)
-export async function loginAction(prevState: any, formData: FormData) {
+export type LoginState = {
+    error?: string
+    success?: boolean
+}
+
+export async function loginAction(prevState: LoginState, formData: FormData): Promise<LoginState> {
     const password = formData.get('password') as string
     const adminPassword = process.env.ADMIN_PASSWORD
 
@@ -16,10 +20,13 @@ export async function loginAction(prevState: any, formData: FormData) {
             path: '/',
             maxAge: 60 * 60 * 24 // 1 day
         })
-        redirect('/admin')
+        // We cannot return here if we redirect, but nextjs redirects throw errors, so it is fine.
+        // However, for type safety, let's keep it clean.
     } else {
-        return { error: 'Contraseña incorrecta' }
+        return { error: 'Contraseña incorrecta', success: false }
     }
+
+    redirect('/admin')
 }
 
 export async function logoutAction() {

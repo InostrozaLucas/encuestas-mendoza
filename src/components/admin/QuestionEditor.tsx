@@ -66,7 +66,7 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
         // Construct content JSON based on type
         let content: any = { question: questionText }
 
-        if (['multiple_choice', 'single_choice_image'].includes(type)) {
+        if (['multiple_choice', 'single_choice', 'single_choice_image'].includes(type)) {
             content.options = options
         } else if (type === 'slider_scale') {
             content.minLabel = initialData?.content?.minLabel || 'Muy Negativa' // Default or add inputs for these
@@ -132,7 +132,8 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
                             onChange={(e) => setType(e.target.value as QuestionType)}
                             disabled={!!initialData} // Prevent type change on edit to avoid data loss issues for now
                         >
-                            <option value="multiple_choice">Selección Múltiple</option>
+                            <option value="single_choice">Opción Única (Radio)</option>
+                            <option value="multiple_choice">Opción Múltiple (Checkboxes)</option>
                             <option value="single_choice_image">Candidatos (Con Imágen)</option>
                             <option value="slider_scale">Escala (Termómetro)</option>
                             <option value="text">Texto Libre</option>
@@ -151,7 +152,7 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
                     </div>
 
                     {/* Options Logic */}
-                    {['multiple_choice', 'single_choice_image'].includes(type) && (
+                    {['multiple_choice', 'single_choice', 'single_choice_image'].includes(type) && (
                         <div className="space-y-3">
                             <Label>Opciones</Label>
                             {options.map((opt, idx) => (
