@@ -22,7 +22,7 @@ export function Thermometer({
     disabled = false
 }: ThermometerProps) {
 
-    // Internal helper to get slider value (must be array)
+    // Internal helper to get slider value (must be array for Shadcn Slider)
     // If value is null (DK), we default to 5 for visual centering but make it grayscale/inactive
     const sliderValue = value === null ? [5] : [value]
     const isDK = value === null
@@ -53,7 +53,7 @@ export function Thermometer({
                 <div className="mb-6 w-32 h-32 rounded-full overflow-hidden border-4 border-slate-100 shadow-sm relative">
                     <img
                         src={imageUrl}
-                        alt="Candidate or Topic"
+                        alt="Candidate/Topic"
                         className="w-full h-full object-cover"
                     />
                 </div>
@@ -76,7 +76,7 @@ export function Thermometer({
                     disabled={disabled}
                 />
 
-                {/* Dynamically colored thumb override */}
+                {/* Dynamically colored thumb override via style tag */}
                 <style jsx global>{`
                     span[role="slider"] {
                         background-color: ${currentColor} !important;
@@ -84,6 +84,7 @@ export function Thermometer({
                         border-width: 4px !important;
                         width: 2rem !important;
                         height: 2rem !important;
+                        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
                     }
                 `}</style>
             </div>
@@ -103,16 +104,18 @@ export function Thermometer({
                     "w-full max-w-xs transition-all",
                     isDK ? "bg-slate-600 hover:bg-slate-700 text-white" : "text-slate-600 hover:bg-slate-50"
                 )}
+                disabled={disabled}
             >
-                <span className={cn(
+                <div className={cn(
                     "mr-2 flex h-5 w-5 items-center justify-center rounded-sm border",
                     isDK ? "border-white/50" : "border-slate-300"
                 )}>
                     {isDK && <span className="text-[10px]">✓</span>}
-                </span>
+                </div>
                 No lo conozco / No sabe
             </Button>
         </div>
     )
 }
+
 
