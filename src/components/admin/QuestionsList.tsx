@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Trash2, ArrowUp, ArrowDown, Edit } from 'lucide-react'
 
 import { Question } from '@/types/admin'
@@ -79,7 +78,9 @@ export default function QuestionsList({ surveyId, onEdit }: { surveyId: string, 
                     <CardHeader className="py-4">
                         <div className="flex justify-between items-start">
                             <div className="flex gap-3 items-center cursor-pointer" onClick={() => onEdit(q)}>
-                                <Badge variant="outline">{idx + 1}</Badge>
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-slate-200 text-xs font-semibold text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                                    {idx + 1}
+                                </span>
                                 <div>
                                     <div className="font-medium hover:underline">{q.content.question}</div>
                                     <div className="text-xs text-slate-500 uppercase">{q.type.replace('_', ' ')}</div>

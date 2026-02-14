@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { ChevronLeft, Plus, Save, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import QuestionsList from '@/components/admin/QuestionsList'
@@ -103,7 +102,9 @@ export default function EditSurveyPage({ params }: { params: Promise<{ id: strin
                         <div>
                             <h1 className="text-2xl font-bold">{survey.title}</h1>
                             <div className="flex items-center gap-2">
-                                <Badge>{survey.status}</Badge>
+                                <span className="inline-flex items-center rounded-full border border-slate-200 px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 dark:border-slate-800 dark:focus:ring-slate-300 dark:text-slate-50">
+                                    {survey.status}
+                                </span>
                                 <span className="text-sm text-slate-500">/{survey.slug}</span>
                             </div>
                         </div>

@@ -1,9 +1,8 @@
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Plus, Edit, Trash2, ExternalLink } from 'lucide-react'
+import { Plus, Edit, ExternalLink } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { logoutAction } from './actions'
 
 // Helper to fetch surveys
@@ -53,9 +52,12 @@ export default async function AdminDashboard() {
                         <Card key={survey.id} className="hover:shadow-lg transition-shadow">
                             <CardHeader>
                                 <div className="flex justify-between items-start">
-                                    <Badge variant={survey.status === 'active' ? 'default' : 'secondary'} className="capitalize">
+                                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${survey.status === 'active'
+                                        ? 'bg-slate-900 text-slate-50 dark:bg-slate-50 dark:text-slate-900'
+                                        : 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-50'
+                                        }`}>
                                         {survey.status}
-                                    </Badge>
+                                    </span>
                                     <Link href={`/encuesta/${survey.slug}`} target="_blank">
                                         <Button variant="ghost" size="icon" title="Ver encuesta pública">
                                             <ExternalLink className="w-4 h-4" />
@@ -70,7 +72,6 @@ export default async function AdminDashboard() {
                                     <Link href={`/admin/surveys/${survey.id}`} className="w-full">
                                         <Button variant="outline" className="w-full">
                                             <Edit className="w-4 h-4 mr-2" />
-                                            Editar
                                         </Button>
                                     </Link>
                                 </div>
