@@ -207,4 +207,3 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
         </Card>
     )
 }
-
