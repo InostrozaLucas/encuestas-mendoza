@@ -136,8 +136,8 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
                             <option value="multiple_choice">Opción Múltiple (Checkboxes)</option>
                             <option value="single_choice_image">Candidatos (Con Imágen)</option>
                             <option value="slider_scale">Escala (Termómetro)</option>
-                            <option value="text">Texto Libre</option>
                             <option value="boolean">Sí / No</option>
+                            <option value="text">Texto Libre</option>
                         </select>
                     </div>
 
@@ -207,3 +207,4 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
         </Card>
     )
 }
+
