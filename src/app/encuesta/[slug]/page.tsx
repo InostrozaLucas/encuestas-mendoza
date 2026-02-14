@@ -82,10 +82,13 @@ export default function SurveyPage({ params }: { params: Promise<{ slug: string 
 
                     if (q.type === 'slider_scale') {
                         uiQuestion.thermometerConfig = {
-                            min: 1, // Default, update if added to DB content
+                            min: 1,
                             max: 10,
                             step: 1
                         }
+                        uiQuestion.imageUrl = content.imageUrl
+                        uiQuestion.minLabel = content.minLabel
+                        uiQuestion.maxLabel = content.maxLabel
                     }
 
                     return uiQuestion

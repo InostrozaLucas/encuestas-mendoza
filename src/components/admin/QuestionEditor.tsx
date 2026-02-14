@@ -31,6 +31,11 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
     )
     const [required, setRequired] = useState(initialData?.is_required ?? true)
 
+    // Slider Scale specific state
+    const [sliderImage, setSliderImage] = useState<string | undefined>(initialData?.content?.imageUrl)
+    const [minLabel, setMinLabel] = useState(initialData?.content?.minLabel || 'Muy Mala')
+    const [maxLabel, setMaxLabel] = useState(initialData?.content?.maxLabel || 'Muy Buena')
+
     // Options handling
     const addOption = () => {
         setOptions([...options, { id: Math.random().toString(36).substr(2, 9), text: '' }])
@@ -59,6 +64,17 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
         setLoading(false)
     }
 
+    const handleSliderImageUpload = async (file: File) => {
+        setLoading(true)
+        const url = await uploadImage(file)
+        if (url) {
+            setSliderImage(url)
+        } else {
+            alert('Error uploading image')
+        }
+        setLoading(false)
+    }
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
         setLoading(true)
@@ -69,8 +85,9 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
         if (['multiple_choice', 'single_choice', 'single_choice_image'].includes(type)) {
             content.options = options
         } else if (type === 'slider_scale') {
-            content.minLabel = initialData?.content?.minLabel || 'Muy Negativa' // Default or add inputs for these
-            content.maxLabel = initialData?.content?.maxLabel || 'Muy Positiva'
+            content.minLabel = minLabel
+            content.maxLabel = maxLabel
+            content.imageUrl = sliderImage
         }
 
         try {

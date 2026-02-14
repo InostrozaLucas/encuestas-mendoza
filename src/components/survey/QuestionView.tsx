@@ -22,6 +22,9 @@ export interface Question {
     text: string
     options?: Option[]
     required?: boolean
+    imageUrl?: string
+    minLabel?: string
+    maxLabel?: string
     thermometerConfig?: {
         min: number
         max: number
@@ -51,7 +54,12 @@ export function QuestionView({ question, onNext, isLastQuestion, isSubmitting = 
 
     const handleNext = () => {
         if (question.type === "thermometer") {
-            onNext(thermometerValue[0])
+            // Check if DK is selected
+            if (selectedOption === 'DK') {
+                onNext('DK') // Or null, depending on backend preference. Let's use 'DK' alias for now.
+            } else {
+                onNext(thermometerValue[0])
+            }
         } else {
             if (selectedOption) {
                 onNext(selectedOption)
@@ -152,15 +160,71 @@ export function QuestionView({ question, onNext, isLastQuestion, isSubmitting = 
 
                     {question.type === "thermometer" && (
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            {/* Optional Image */}
+                            {question.imageUrl && (
+                                <div className="mb-6 flex justify-center">
+                                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-slate-100 shadow-sm relative">
+                                        <img
+                                            src={question.imageUrl}
+                                            alt={question.text}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="mb-6 flex justify-center">
                                 <div className="text-4xl font-bold text-[hsl(var(--primary))]">
-                                    {thermometerValue[0]}
+                                    {selectedOption === 'DK' ? '?' : thermometerValue[0]}
                                 </div>
                             </div>
+
                             <Thermometer
-                                value={thermometerValue}
-                                onValueChange={setThermometerValue}
+                                value={selectedOption === 'DK' ? null : thermometerValue[0]}
+                                onValueChange={(val) => {
+                                    if (val === null) {
+                                        setSelectedOption('DK')
+                                    } else {
+                                        setSelectedOption(null)
+                                        setThermometerValue([val])
+                                    }
+                                }}
+                                imageUrl={question.imageUrl}
+                                minLabel={question.minLabel}
+                                maxLabel={question.maxLabel}
+                                disabled={isSubmitting}
                             />
+
+                            {/* Labels */}
+                            <div className="flex justify-between text-xs font-semibold text-slate-500 uppercase tracking-wide mt-3">
+                                <span>{question.minLabel || 'Muy Mala'}</span>
+                                <span>{question.maxLabel || 'Muy Buena'}</span>
+                            </div>
+
+                            {/* Don't Know Option */}
+                            <div className="mt-8 pt-6 border-t border-slate-100">
+                                <div
+                                    className={`flex items-center p-3 rounded-lg border transition-all cursor-pointer ${selectedOption === 'DK'
+                                        ? "border-slate-400 bg-slate-100 text-slate-900"
+                                        : "border-gray-200 hover:bg-slate-50 text-slate-600"
+                                        }`}
+                                    onClick={() => {
+                                        if (selectedOption === 'DK') {
+                                            setSelectedOption(null)
+                                        } else {
+                                            setSelectedOption('DK')
+                                        }
+                                    }}
+                                >
+                                    <div className={`w-5 h-5 rounded-sm border flex items-center justify-center mr-3 ${selectedOption === 'DK'
+                                        ? "border-slate-600 bg-slate-600"
+                                        : "border-gray-400 bg-white"
+                                        }`}>
+                                        {selectedOption === 'DK' && <div className="w-3 h-3 text-white font-bold flex items-center justify-center text-[10px]">✓</div>}
+                                    </div>
+                                    <span className="text-sm font-medium">No lo conozco / No sabe</span>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
