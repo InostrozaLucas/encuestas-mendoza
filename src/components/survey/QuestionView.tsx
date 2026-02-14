@@ -1,11 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { CandidateCard } from "./CandidateCard"
 import { Thermometer } from "./Thermometer"
 import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
 
 export type QuestionType = "single_choice_image" | "thermometer" | "single_choice" | "multiple_choice" | "slider_scale" | "boolean" | "text"
 
@@ -22,9 +21,9 @@ export interface Question {
     text: string
     options?: Option[]
     required?: boolean
-    imageUrl?: string
-    minLabel?: string
-    maxLabel?: string
+    imageUrl?: string    // For Slider Image
+    minLabel?: string    // For Slider Min Label
+    maxLabel?: string    // For Slider Max Label
     thermometerConfig?: {
         min: number
         max: number
@@ -53,10 +52,10 @@ export function QuestionView({ question, onNext, isLastQuestion, isSubmitting = 
     }
 
     const handleNext = () => {
-        if (question.type === "thermometer") {
+        if (question.type === "thermometer" || question.type === "slider_scale") {
             // Check if DK is selected
             if (selectedOption === 'DK') {
-                onNext('DK') // Or null, depending on backend preference. Let's use 'DK' alias for now.
+                onNext('DK')
             } else {
                 onNext(thermometerValue[0])
             }
@@ -65,15 +64,9 @@ export function QuestionView({ question, onNext, isLastQuestion, isSubmitting = 
                 onNext(selectedOption)
             }
         }
-        // Reset state for next question (though typically this component might unmount or we'd reset in useEffect)
+        // Reset state
         setSelectedOption(null)
         setThermometerValue([5])
-    }
-
-    const canProceed = () => {
-        if (question.type === "thermometer") return true
-        if (Array.isArray(selectedOption)) return selectedOption.length > 0
-        return !!selectedOption
     }
 
     return (
@@ -132,10 +125,7 @@ export function QuestionView({ question, onNext, isLastQuestion, isSubmitting = 
                     {question.type === "multiple_choice" && question.options && (
                         <div className="flex flex-col gap-3">
                             {question.options.map((option) => {
-                                const isSelected = Array.isArray(selectedOption) ? selectedOption.includes(option.id) : selectedOption === option.id; // Handle mixed state temporarily
-                                // Actually, we need to handle state for array.
-                                // The current state `selectedOption` is `string | null`. 
-                                // We need to refactor state to support array for multiple choice.
+                                const isSelected = Array.isArray(selectedOption) ? selectedOption.includes(option.id) : selectedOption === option.id;
                                 return (
                                     <div
                                         key={option.id}
@@ -158,27 +148,8 @@ export function QuestionView({ question, onNext, isLastQuestion, isSubmitting = 
                         </div>
                     )}
 
-                    {question.type === "thermometer" && (
+                    {(question.type === "thermometer" || question.type === "slider_scale") && (
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                            {/* Optional Image */}
-                            {question.imageUrl && (
-                                <div className="mb-6 flex justify-center">
-                                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-slate-100 shadow-sm relative">
-                                        <img
-                                            src={question.imageUrl}
-                                            alt={question.text}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="mb-6 flex justify-center">
-                                <div className="text-4xl font-bold text-[hsl(var(--primary))]">
-                                    {selectedOption === 'DK' ? '?' : thermometerValue[0]}
-                                </div>
-                            </div>
-
                             <Thermometer
                                 value={selectedOption === 'DK' ? null : thermometerValue[0]}
                                 onValueChange={(val) => {
@@ -194,54 +165,58 @@ export function QuestionView({ question, onNext, isLastQuestion, isSubmitting = 
                                 maxLabel={question.maxLabel}
                                 disabled={isSubmitting}
                             />
+                        </div>
+                    )}
 
-                            {/* Labels */}
-                            <div className="flex justify-between text-xs font-semibold text-slate-500 uppercase tracking-wide mt-3">
-                                <span>{question.minLabel || 'Muy Mala'}</span>
-                                <span>{question.maxLabel || 'Muy Buena'}</span>
+                    {question.type === "text" && (
+                        <div className="bg-white p-4 rounded-xl border border-gray-200">
+                            <textarea
+                                className="w-full p-2 border rounded-md"
+                                rows={4}
+                                placeholder="Escriba su respuesta aquí..."
+                                onChange={(e) => setSelectedOption(e.target.value)}
+                            />
+                        </div>
+                    )}
+
+                    {question.type === "boolean" && (
+                        <div className="flex flex-col gap-3">
+                            <div
+                                className={`flex items-center p-4 rounded-xl border transition-all cursor-pointer ${selectedOption === 'true'
+                                    ? "border-slate-900 bg-slate-50"
+                                    : "border-gray-200"
+                                    }`}
+                                onClick={() => setSelectedOption('true')}
+                            >
+                                <span className="text-lg font-medium">Sí</span>
                             </div>
-
-                            {/* Don't Know Option */}
-                            <div className="mt-8 pt-6 border-t border-slate-100">
-                                <div
-                                    className={`flex items-center p-3 rounded-lg border transition-all cursor-pointer ${selectedOption === 'DK'
-                                        ? "border-slate-400 bg-slate-100 text-slate-900"
-                                        : "border-gray-200 hover:bg-slate-50 text-slate-600"
-                                        }`}
-                                    onClick={() => {
-                                        if (selectedOption === 'DK') {
-                                            setSelectedOption(null)
-                                        } else {
-                                            setSelectedOption('DK')
-                                        }
-                                    }}
-                                >
-                                    <div className={`w-5 h-5 rounded-sm border flex items-center justify-center mr-3 ${selectedOption === 'DK'
-                                        ? "border-slate-600 bg-slate-600"
-                                        : "border-gray-400 bg-white"
-                                        }`}>
-                                        {selectedOption === 'DK' && <div className="w-3 h-3 text-white font-bold flex items-center justify-center text-[10px]">✓</div>}
-                                    </div>
-                                    <span className="text-sm font-medium">No lo conozco / No sabe</span>
-                                </div>
+                            <div
+                                className={`flex items-center p-4 rounded-xl border transition-all cursor-pointer ${selectedOption === 'false'
+                                    ? "border-slate-900 bg-slate-50"
+                                    : "border-gray-200"
+                                    }`}
+                                onClick={() => setSelectedOption('false')}
+                            >
+                                <span className="text-lg font-medium">No</span>
                             </div>
                         </div>
                     )}
+
+                </div>
+
+                <div className="mt-8 flex justify-end">
+                    <Button
+                        onClick={handleNext}
+                        size="lg"
+                        className="rounded-full px-8"
+                        disabled={isSubmitting} // Can add validation here
+                    >
+                        {isLastQuestion ? "Finalizar" : "Siguiente"}
+                    </Button>
                 </div>
             </motion.div>
-
-            <div className="mt-8">
-                <Button
-                    size="lg"
-                    className="w-full text-lg h-14 rounded-xl shadow-lg shadow-blue-500/20"
-                    onClick={handleNext}
-                    disabled={!canProceed() || isSubmitting}
-                >
-                    {isSubmitting ? "Enviando..." : (isLastQuestion ? "Finalizar" : "Continuar")}
-                    {!isSubmitting && <ArrowRight className="ml-2 w-5 h-5" />}
-                </Button>
-            </div>
         </div>
     )
 }
+
 
