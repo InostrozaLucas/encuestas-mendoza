@@ -22,7 +22,7 @@ const REGION_DATA = [
 ]
 
 export default function AdminDashboard() {
-    const [managementScore, setManagementScore] = React.useState([7])
+    const [managementScore, setManagementScore] = React.useState<number | null>(7)
 
     return (
         <div className="min-h-screen bg-gray-50/50">
@@ -149,15 +149,16 @@ export default function AdminDashboard() {
                             <div className="relative w-full max-w-[200px] aspect-square flex items-center justify-center mb-8">
                                 {/* Radial/Gauge placeholder or simple centered score */}
                                 <div className="text-6xl font-black text-gray-900">
-                                    {managementScore[0]}<span className="text-2xl text-gray-400 font-medium">/10</span>
+                                    {managementScore === null ? '?' : managementScore}<span className="text-2xl text-gray-400 font-medium">/10</span>
                                 </div>
                             </div>
 
                             <div className="w-full px-4">
                                 <Thermometer
                                     value={managementScore}
-                                    onValueChange={setManagementScore} // Interactive for admin to set target? Or just display? Let's make it interactive for demo.
-                                    className="mb-2"
+                                    onValueChange={setManagementScore}
+                                    minLabel="Desaprobación"
+                                    maxLabel="Aprobación"
                                 />
                                 <p className="text-center text-sm text-gray-500 mt-4">
                                     Deslice para simular cambios en el índice de aprobación.
