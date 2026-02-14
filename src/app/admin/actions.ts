@@ -3,7 +3,8 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-export async function loginAction(formData: FormData) {
+// Fixed signature for useActionState: (state: any, formData: FormData)
+export async function loginAction(prevState: any, formData: FormData) {
     const password = formData.get('password') as string
     const adminPassword = process.env.ADMIN_PASSWORD
 
