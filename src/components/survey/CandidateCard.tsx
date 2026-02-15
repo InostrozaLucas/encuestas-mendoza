@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { Check } from "lucide-react"
+import { getStorageUrl } from "@/lib/storage"
 
 interface CandidateCardProps {
     id: string
@@ -22,6 +23,9 @@ export function CandidateCard({
     selected,
     onClick,
 }: CandidateCardProps) {
+    // Resolve the image URL — handles both full URLs and Supabase storage paths
+    const fullImageUrl = getStorageUrl(imageUrl) || "/placeholder.png"
+
     return (
         <motion.div
             whileHover={{ scale: 1.02 }}
@@ -45,7 +49,7 @@ export function CandidateCard({
                 selected ? "border-[hsl(var(--primary))]" : "border-gray-100"
             )}>
                 <Image
-                    src={imageUrl}
+                    src={fullImageUrl}
                     alt={name}
                     fill
                     className="object-cover"
@@ -64,3 +68,4 @@ export function CandidateCard({
         </motion.div>
     )
 }
+
