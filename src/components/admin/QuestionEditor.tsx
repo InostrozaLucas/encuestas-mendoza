@@ -14,15 +14,12 @@ import { Question } from '@/types/admin'
 
 type QuestionType = 'single_choice_image' | 'multiple_choice' | 'single_choice' | 'slider_scale' | 'boolean' | 'text'
 
-// Assuming a Question type structure for initialData
-// interface Question { ... } removed to use imported type
-
 export default function QuestionEditor({ surveyId, initialData, onSaved, onCancel }: { surveyId: string, initialData?: Question, onSaved: () => void, onCancel: () => void }) {
     const [loading, setLoading] = useState(false)
     const [type, setType] = useState<QuestionType>((initialData?.type as QuestionType) || 'multiple_choice')
     const [questionText, setQuestionText] = useState(initialData?.content?.question || '')
 
-    // Initialize options safely
+    // Options state (for single_choice, multiple_choice, single_choice_image)
     const [options, setOptions] = useState<{ id: string, text: string, imageUrl?: string }[]>(
         initialData?.content?.options || [
             { id: '1', text: '' },
@@ -36,7 +33,7 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
     const [minLabel, setMinLabel] = useState(initialData?.content?.minLabel || 'Muy Mala')
     const [maxLabel, setMaxLabel] = useState(initialData?.content?.maxLabel || 'Muy Buena')
 
-    // Options handling
+    // --- Option handlers ---
     const addOption = () => {
         setOptions([...options, { id: Math.random().toString(36).substr(2, 9), text: '' }])
     }
@@ -51,6 +48,7 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
         setOptions(newOptions)
     }
 
+    // Upload image for a candidate option
     const handleImageUpload = async (index: number, file: File) => {
         setLoading(true)
         const url = await uploadImage(file)
@@ -59,28 +57,30 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
             newOptions[index].imageUrl = url
             setOptions(newOptions)
         } else {
-            alert('Error uploading image')
+            alert('Error al subir imagen')
         }
         setLoading(false)
     }
 
+    // Upload image for slider_scale question
     const handleSliderImageUpload = async (file: File) => {
         setLoading(true)
-        const url = await uploadImage(file)
+        const url = await uploadImage(file, 'slider')
         if (url) {
             setSliderImage(url)
         } else {
-            alert('Error uploading image')
+            alert('Error al subir imagen')
         }
         setLoading(false)
     }
 
+    // --- Submit ---
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
         setLoading(true)
 
         // Construct content JSON based on type
-        let content: any = { question: questionText }
+        const content: any = { question: questionText }
 
         if (['multiple_choice', 'single_choice', 'single_choice_image'].includes(type)) {
             content.options = options
@@ -103,8 +103,7 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
                     .eq('id', initialData.id)
                 if (error) throw error
             } else {
-                // INSERT
-                // Get current max order
+                // INSERT — get next order
                 const { data: maxOrderData } = await supabase
                     .from('questions')
                     .select('order')
@@ -127,12 +126,13 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
             onSaved()
         } catch (error) {
             console.error(error)
-            alert('Error saving question')
+            alert('Error al guardar pregunta')
         } finally {
             setLoading(false)
         }
     }
 
+    // --- Render ---
     return (
         <Card className="border-2 border-slate-200 dark:border-slate-800">
             <CardHeader>
@@ -141,13 +141,14 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
             <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
 
+                    {/* Question Type */}
                     <div className="space-y-2">
                         <Label>Tipo de Pregunta</Label>
                         <select
                             className="flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus:ring-slate-300"
                             value={type}
                             onChange={(e) => setType(e.target.value as QuestionType)}
-                            disabled={!!initialData} // Prevent type change on edit to avoid data loss issues for now
+                            disabled={!!initialData}
                         >
                             <option value="single_choice">Opción Única (Radio)</option>
                             <option value="multiple_choice">Opción Múltiple (Checkboxes)</option>
@@ -158,6 +159,7 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
                         </select>
                     </div>
 
+                    {/* Question Text */}
                     <div className="space-y-2">
                         <Label>Texto de la Pregunta</Label>
                         <Input
@@ -168,7 +170,7 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
                         />
                     </div>
 
-                    {/* Options Logic */}
+                    {/* ==================== OPTIONS SECTION ==================== */}
                     {['multiple_choice', 'single_choice', 'single_choice_image'].includes(type) && (
                         <div className="space-y-3">
                             <Label>Opciones</Label>
@@ -213,6 +215,70 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
                         </div>
                     )}
 
+                    {/* ==================== SLIDER SCALE SECTION ==================== */}
+                    {type === 'slider_scale' && (
+                        <div className="space-y-4 border p-4 rounded-md bg-slate-50 dark:bg-slate-900/50">
+                            <h3 className="font-medium text-sm">Configuración de Escala (Termómetro)</h3>
+
+                            {/* Slider Image Upload */}
+                            <div className="space-y-2">
+                                <Label>Imagen de Referencia (Opcional)</Label>
+                                <div className="flex items-center gap-4">
+                                    {sliderImage ? (
+                                        <div className="relative w-20 h-20 rounded overflow-hidden border">
+                                            <img src={sliderImage} alt="preview" className="object-cover w-full h-full" />
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                size="icon"
+                                                className="absolute top-0 right-0 h-6 w-6"
+                                                onClick={() => setSliderImage(undefined)}
+                                            >
+                                                <Trash2 className="w-3 h-3" />
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="w-20 h-20 bg-slate-100 rounded flex items-center justify-center text-slate-400 border border-dashed">
+                                            <ImageIcon className="w-8 h-8" />
+                                        </div>
+                                    )}
+                                    <div className="flex-1">
+                                        <Input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0]
+                                                if (file) handleSliderImageUpload(file)
+                                            }}
+                                        />
+                                        <p className="text-xs text-slate-500 mt-1">Sube una imagen del candidato o tema a evaluar.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Min & Max Labels */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Etiqueta Mínima (1)</Label>
+                                    <Input
+                                        value={minLabel}
+                                        onChange={(e) => setMinLabel(e.target.value)}
+                                        placeholder="Ej: Muy Mala"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Etiqueta Máxima (10)</Label>
+                                    <Input
+                                        value={maxLabel}
+                                        onChange={(e) => setMaxLabel(e.target.value)}
+                                        placeholder="Ej: Muy Buena"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ==================== SUBMIT ==================== */}
                     <div className="flex justify-end gap-2 pt-4 border-t">
                         <Button type="button" variant="ghost" onClick={onCancel}>Cancelar</Button>
                         <Button type="submit" disabled={loading}>
@@ -224,3 +290,4 @@ export default function QuestionEditor({ surveyId, initialData, onSaved, onCance
         </Card>
     )
 }
+
