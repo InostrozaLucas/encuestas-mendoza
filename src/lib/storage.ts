@@ -30,3 +30,24 @@ export async function uploadImage(file: File, path: string = 'candidates'): Prom
         return null
     }
 }
+
+/**
+ * Returns the full URL for a storage path or returns the URL as-is if it's already a full URL.
+ * Handles cases where DB might only save the filename/path instead of a complete URL.
+ */
+export function getStorageUrl(pathOrUrl: string | undefined | null): string | undefined {
+    if (!pathOrUrl) return undefined
+
+    // Already a full URL — return as-is
+    if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
+        return pathOrUrl
+    }
+
+    // Relative path — build the full public URL via Supabase client
+    const { data } = supabase.storage
+        .from('survey-images')
+        .getPublicUrl(pathOrUrl)
+
+    return data.publicUrl
+}
+
