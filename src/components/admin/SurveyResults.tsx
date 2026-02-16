@@ -5,7 +5,8 @@ import { supabase } from '@/lib/supabase'
 import { getStorageUrl } from '@/lib/storage'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { Users, BarChart3, HelpCircle, TrendingUp, AlertCircle } from 'lucide-react'
+import { Users, BarChart3, HelpCircle, TrendingUp, AlertCircle, Download } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -48,6 +49,7 @@ export default function SurveyResults({ surveyId }: { surveyId: string }) {
     const [totalResponses, setTotalResponses] = useState(0)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [exporting, setExporting] = useState(false)
 
     useEffect(() => {
         async function fetchResults() {
@@ -147,21 +149,118 @@ export default function SurveyResults({ surveyId }: { surveyId: string }) {
         )
     }
 
+    // ─── CSV Export ──────────────────────────────────────────────────────────
+
+    async function handleExportCSV() {
+        setExporting(true)
+        try {
+            // 1. Build a question lookup: id → question text
+            const questionMap: Record<string, QuestionData> = {}
+            for (const r of results) {
+                questionMap[r.question.id] = r.question
+            }
+            const questionIds = Object.keys(questionMap)
+
+            // 2. Fetch full answer data (with response_id and created_at)
+            const { data: fullAnswers, error: fetchErr } = await supabase
+                .from('answers')
+                .select('question_id, answer_value, response_id, created_at')
+                .in('question_id', questionIds)
+                .order('created_at', { ascending: true })
+
+            if (fetchErr) throw fetchErr
+
+            // 3. Build CSV rows
+            const csvRows: string[] = []
+            // Header
+            csvRows.push('Fecha,Pregunta,Respuesta,Usuario_ID')
+
+            for (const row of (fullAnswers || [])) {
+                const q = questionMap[row.question_id]
+                const questionText = q?.content?.question || row.question_id
+                const rawVal = typeof row.answer_value === 'string' ? row.answer_value : String(row.answer_value)
+
+                // Resolve answer to human-readable text
+                let displayValue = rawVal
+                if (rawVal === 'DK' || rawVal === 'null') {
+                    displayValue = 'No lo conozco / No sabe'
+                } else if (q && ['single_choice', 'single_choice_image', 'multiple_choice'].includes(q.type)) {
+                    const options: { id: string; text: string }[] = q.content?.options || []
+                    // Could be a JSON array (multiple_choice)
+                    try {
+                        const parsed = JSON.parse(rawVal)
+                        if (Array.isArray(parsed)) {
+                            displayValue = parsed.map(v => {
+                                const opt = options.find(o => o.id === String(v))
+                                return opt ? opt.text : String(v)
+                            }).join('; ')
+                        } else {
+                            const opt = options.find(o => o.id === rawVal)
+                            if (opt) displayValue = opt.text
+                        }
+                    } catch {
+                        const opt = options.find(o => o.id === rawVal)
+                        if (opt) displayValue = opt.text
+                    }
+                }
+
+                const fecha = row.created_at ? new Date(row.created_at).toLocaleString('es-AR') : ''
+                const escapeCsv = (s: string) => `"${s.replace(/"/g, '""')}"`
+
+                csvRows.push([
+                    escapeCsv(fecha),
+                    escapeCsv(questionText),
+                    escapeCsv(displayValue),
+                    escapeCsv(row.response_id || '')
+                ].join(','))
+            }
+
+            // 4. Trigger download with BOM for Excel
+            const BOM = '\uFEFF'
+            const csvContent = BOM + csvRows.join('\n')
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `resultados_encuesta_${new Date().toISOString().slice(0, 10)}.csv`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            URL.revokeObjectURL(url)
+        } catch (err: any) {
+            console.error('Export error:', err)
+            alert('Error al exportar: ' + (err.message || 'Error desconocido'))
+        } finally {
+            setExporting(false)
+        }
+    }
+
     // ─── Render ──────────────────────────────────────────────────────────────
 
     return (
         <div className="space-y-6">
-            {/* Summary KPI */}
+            {/* Summary KPI + Export */}
             <Card className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0">
                 <CardContent className="p-6">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-white/20 rounded-full p-3">
-                            <Users className="w-6 h-6" />
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="bg-white/20 rounded-full p-3">
+                                <Users className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-white/80">Total de Respuestas</p>
+                                <p className="text-3xl font-bold">{totalResponses}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-sm font-medium text-white/80">Total de Respuestas</p>
-                            <p className="text-3xl font-bold">{totalResponses}</p>
-                        </div>
+                        <Button
+                            onClick={handleExportCSV}
+                            disabled={exporting}
+                            variant="outline"
+                            className="bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white"
+                        >
+                            <Download className="w-4 h-4 mr-2" />
+                            {exporting ? 'Exportando...' : 'Exportar Datos'}
+                        </Button>
                     </div>
                 </CardContent>
             </Card>
@@ -542,3 +641,4 @@ function getTypeLabel(type: string): string {
     }
     return labels[type] || type
 }
+
