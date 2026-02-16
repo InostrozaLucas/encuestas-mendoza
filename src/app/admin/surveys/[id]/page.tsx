@@ -8,18 +8,17 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { ChevronLeft, Plus, Save, Trash2 } from 'lucide-react'
+import { ChevronLeft, Plus, Save, Trash2, BarChart3, Settings, List } from 'lucide-react'
 import Link from 'next/link'
 import QuestionsList from '@/components/admin/QuestionsList'
 import QuestionEditor from '@/components/admin/QuestionEditor'
+import SurveyResults from '@/components/admin/SurveyResults'
 import { Question } from '@/types/admin'
+
+type Tab = 'questions' | 'results' | 'config'
 
 export default function EditSurveyPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter()
-    // params is a Promise in Next.js 15+ for async components, but inside client components we use `use` hook or await it in server wrapper.
-    // Actually, for client components in Next 15, params is a Promise prop. 
-    // Let's use `use()` hook if available (React 19) or just wait. 
-    // The user environment has React 19.2.3.
     const { id } = use(params)
 
     const [survey, setSurvey] = useState<any>(null)
@@ -28,6 +27,7 @@ export default function EditSurveyPage({ params }: { params: Promise<{ id: strin
     const [showQuestionEditor, setShowQuestionEditor] = useState(false)
     const [editingQuestion, setEditingQuestion] = useState<Question | undefined>(undefined)
     const [refreshQuestionsKey, setRefreshQuestionsKey] = useState(0)
+    const [activeTab, setActiveTab] = useState<Tab>('questions')
 
     useEffect(() => {
         async function fetchSurvey() {
@@ -39,7 +39,7 @@ export default function EditSurveyPage({ params }: { params: Promise<{ id: strin
 
             if (error) {
                 console.error(error)
-                router.push('/admin') // Redirect if not found
+                router.push('/admin')
                 return
             }
             setSurvey(data)
@@ -51,9 +51,6 @@ export default function EditSurveyPage({ params }: { params: Promise<{ id: strin
     const handleUpdateSurvey = async (e: React.FormEvent) => {
         e.preventDefault()
         setSaving(true)
-
-        // Status update logic if needed
-        // const status = e.currentTarget.status.value 
 
         const { error } = await supabase
             .from('surveys')
@@ -67,8 +64,6 @@ export default function EditSurveyPage({ params }: { params: Promise<{ id: strin
 
         if (error) {
             alert('Error updating survey')
-        } else {
-            // Optional: Show success toast
         }
         setSaving(false)
     }
@@ -89,7 +84,7 @@ export default function EditSurveyPage({ params }: { params: Promise<{ id: strin
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-8">
-            <div className="max-w-4xl mx-auto space-y-8">
+            <div className="max-w-5xl mx-auto space-y-8">
 
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -102,7 +97,7 @@ export default function EditSurveyPage({ params }: { params: Promise<{ id: strin
                         <div>
                             <h1 className="text-2xl font-bold">{survey.title}</h1>
                             <div className="flex items-center gap-2">
-                                <span className="inline-flex items-center rounded-full border border-slate-200 px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 dark:border-slate-800 dark:focus:ring-slate-300 dark:text-slate-50">
+                                <span className="inline-flex items-center rounded-full border border-slate-200 px-2.5 py-0.5 text-xs font-semibold transition-colors dark:border-slate-800 dark:text-slate-50">
                                     {survey.status}
                                 </span>
                                 <span className="text-sm text-slate-500">/{survey.slug}</span>
@@ -115,10 +110,91 @@ export default function EditSurveyPage({ params }: { params: Promise<{ id: strin
                     </Button>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Tab Navigation */}
+                <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg w-fit">
+                    <button
+                        onClick={() => setActiveTab('questions')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'questions'
+                                ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white'
+                                : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                    >
+                        <List className="w-4 h-4" />
+                        Preguntas
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('results')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'results'
+                                ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white'
+                                : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                    >
+                        <BarChart3 className="w-4 h-4" />
+                        Resultados
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('config')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'config'
+                                ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white'
+                                : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                    >
+                        <Settings className="w-4 h-4" />
+                        Configuración
+                    </button>
+                </div>
 
-                    {/* Left Column: Config */}
-                    <div className="lg:col-span-1 space-y-6">
+                {/* ── Tab: Questions ── */}
+                {activeTab === 'questions' && (
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-xl font-bold">Preguntas</h2>
+                            {!showQuestionEditor && (
+                                <Button onClick={() => {
+                                    setEditingQuestion(undefined)
+                                    setShowQuestionEditor(true)
+                                }}>
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Agregar Pregunta
+                                </Button>
+                            )}
+                        </div>
+
+                        {showQuestionEditor && (
+                            <QuestionEditor
+                                surveyId={id}
+                                initialData={editingQuestion}
+                                onSaved={() => {
+                                    setShowQuestionEditor(false)
+                                    setEditingQuestion(undefined)
+                                    setRefreshQuestionsKey(k => k + 1)
+                                }}
+                                onCancel={() => {
+                                    setShowQuestionEditor(false)
+                                    setEditingQuestion(undefined)
+                                }}
+                            />
+                        )}
+
+                        <QuestionsList
+                            surveyId={id}
+                            key={refreshQuestionsKey}
+                            onEdit={(q) => {
+                                setEditingQuestion(q)
+                                setShowQuestionEditor(true)
+                            }}
+                        />
+                    </div>
+                )}
+
+                {/* ── Tab: Results ── */}
+                {activeTab === 'results' && (
+                    <SurveyResults surveyId={id} />
+                )}
+
+                {/* ── Tab: Config ── */}
+                {activeTab === 'config' && (
+                    <div className="max-w-lg">
                         <Card>
                             <CardHeader>
                                 <CardTitle>Configuración</CardTitle>
@@ -167,49 +243,10 @@ export default function EditSurveyPage({ params }: { params: Promise<{ id: strin
                             </CardContent>
                         </Card>
                     </div>
-
-                    {/* Right Column: Questions */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-bold">Preguntas</h2>
-                            {!showQuestionEditor && (
-                                <Button onClick={() => {
-                                    setEditingQuestion(undefined)
-                                    setShowQuestionEditor(true)
-                                }}>
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Agregar Pregunta
-                                </Button>
-                            )}
-                        </div>
-
-                        {showQuestionEditor && (
-                            <QuestionEditor
-                                surveyId={id}
-                                initialData={editingQuestion}
-                                onSaved={() => {
-                                    setShowQuestionEditor(false)
-                                    setEditingQuestion(undefined)
-                                    setRefreshQuestionsKey(k => k + 1)
-                                }}
-                                onCancel={() => {
-                                    setShowQuestionEditor(false)
-                                    setEditingQuestion(undefined)
-                                }}
-                            />
-                        )}
-
-                        <QuestionsList
-                            surveyId={id}
-                            key={refreshQuestionsKey}
-                            onEdit={(q) => {
-                                setEditingQuestion(q)
-                                setShowQuestionEditor(true)
-                            }}
-                        />
-                    </div>
-                </div>
+                )}
             </div>
         </div>
     )
 }
+
+
